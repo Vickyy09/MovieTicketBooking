@@ -34,7 +34,7 @@ https://quickchart.io/barcode?type=code128&text=YOUR_TEXT
 ---
 
 ##  Entity Relationships
-
+![ER Diagram](ER.png)
 ---
 
 ##  Features
