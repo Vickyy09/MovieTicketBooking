@@ -12,7 +12,10 @@ public class Ticket {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String barcode;
+    @Lob
+    @Column(name = "barcode_image", columnDefinition = "LONGBLOB")
+    private byte[] barcode;
+
     private LocalDateTime issuedAt;
 
     @ManyToOne
@@ -24,20 +27,20 @@ public class Ticket {
     @JoinColumn(name = "seat_id")
     private Seat seat;
 
+    public byte[] getBarcode() {
+        return barcode;
+    }
+
+    public void setBarcode(byte[] barcode) {
+        this.barcode = barcode;
+    }
+
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getBarcode() {
-        return barcode;
-    }
-
-    public void setBarcode(String barcode) {
-        this.barcode = barcode;
     }
 
     public LocalDateTime getIssuedAt() {

@@ -25,8 +25,7 @@ public class MovieService {
 
         Movie savedMovie = movieRepository.save(movie);
 
-        return new MovieResponseDTO(
-                savedMovie.getId(),
+        return new MovieResponseDTO(savedMovie.getId(),
                 savedMovie.getTitle(),
                 savedMovie.getDurationMinutes(),
                 savedMovie.getLanguage(),
@@ -36,8 +35,7 @@ public class MovieService {
 
     public MovieResponseDTO getMovie(Long id) {
 
-        Movie movie = movieRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Movie not found"));
+        Movie movie = movieRepository.findById(id).orElseThrow(() -> new RuntimeException("Movie not found"));
 
         return new MovieResponseDTO(
                 movie.getId(),
@@ -50,15 +48,7 @@ public class MovieService {
 
     public List<MovieResponseDTO> getAllMovies() {
 
-        return movieRepository.findAll()
-                .stream()
-                .map(movie -> new MovieResponseDTO(
-                        movie.getId(),
-                        movie.getTitle(),
-                        movie.getDurationMinutes(),
-                        movie.getLanguage(),
-                        movie.getRating()
-                ))
-                .collect(Collectors.toList());
+        return movieRepository.findAll().stream().map(movie -> new MovieResponseDTO(movie.getId(), movie.getTitle(),
+                        movie.getDurationMinutes(), movie.getLanguage(), movie.getRating())).collect(Collectors.toList());
     }
 }

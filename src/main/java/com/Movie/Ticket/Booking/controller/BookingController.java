@@ -1,6 +1,7 @@
 package com.Movie.Ticket.Booking.controller;
 
 import com.Movie.Ticket.Booking.dto.ResponseDTO.BookingResponseDTO;
+import com.Movie.Ticket.Booking.dto.ResponseDTO.ViewBookingResponseDTO;
 import com.Movie.Ticket.Booking.dto.requestDTO.BookingRequestDTO;
 import com.Movie.Ticket.Booking.entity.Booking;
 import com.Movie.Ticket.Booking.entity.Seat;
@@ -44,10 +45,10 @@ public class BookingController {
     }
 
     @GetMapping("/{id}")
-    public Booking getBooking(@PathVariable @Positive(message = "Booking id must be greater than 0") Long id) {
-        return bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+    public ViewBookingResponseDTO getBooking(@PathVariable Long id) {
+        return bookingService.viewBooking(id);
     }
+
 
     @DeleteMapping("/{id}")
     public BookingResponseDTO cancelBooking(@PathVariable @Positive(message = "Booking id must be greater than 0") Long id) {

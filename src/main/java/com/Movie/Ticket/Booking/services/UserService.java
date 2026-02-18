@@ -19,7 +19,6 @@ public class UserService {
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
         user.setPhone(dto.getPhone());
-
         User savedUser = userRepository.save(user);
 
         return new UserResponseDTO(
@@ -32,8 +31,7 @@ public class UserService {
 
     public UserResponseDTO getUser(Long id) {
 
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
 
         return new UserResponseDTO(
                 user.getId(),

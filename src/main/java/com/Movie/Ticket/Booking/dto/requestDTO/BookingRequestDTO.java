@@ -18,8 +18,7 @@ public class BookingRequestDTO {
 
     @NotEmpty(message = "At least one seat must be selected")
     private List<@NotNull(message = "Seat id cannot be null")
-    @Positive(message = "Seat id must be greater than 0")
-            Long> seatIds;
+    @Positive(message = "Seat id must be greater than 0") Long> seatIds;
 
     public Long getUserId() {
         return userId;

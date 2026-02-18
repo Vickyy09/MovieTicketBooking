@@ -24,9 +24,7 @@ public class TheatreService {
         Theatre theatre = new Theatre();
         theatre.setName(dto.getName());
         theatre.setLocation(dto.getLocation());
-
         Theatre savedTheatre = theatreRepository.save(theatre);
-
         int seatCount = 0;
 
         for (char row = 'A'; row <= 'E'; row++) {

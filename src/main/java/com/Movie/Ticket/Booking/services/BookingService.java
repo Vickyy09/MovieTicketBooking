@@ -1,11 +1,15 @@
 package com.Movie.Ticket.Booking.services;
 
 import com.Movie.Ticket.Booking.dto.ResponseDTO.BookingResponseDTO;
+import com.Movie.Ticket.Booking.dto.ResponseDTO.TicketResponseDTO;
+import com.Movie.Ticket.Booking.dto.ResponseDTO.ViewBookingResponseDTO;
 import com.Movie.Ticket.Booking.dto.requestDTO.BookingRequestDTO;
 import com.Movie.Ticket.Booking.entity.*;
 import com.Movie.Ticket.Booking.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.Base64;
+import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -43,11 +47,9 @@ public class BookingService {
             throw new RuntimeException("Maximum 9 seats allowed");
         }
 
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(request.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
 
-        Show show = showRepository.findById(request.getShowId())
-                .orElseThrow(() -> new RuntimeException("Show not found"));
+        Show show = showRepository.findById(request.getShowId()).orElseThrow(() -> new RuntimeException("Show not found"));
 
         if (show.getShowTime().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Cannot book seats for past show");
@@ -67,9 +69,7 @@ public class BookingService {
         List<Ticket> tickets = new ArrayList<>();
 
         for (Long seatId : seatIds) {
-
-            ShowSeat showSeat = showSeatRepository
-                    .findByShowIdAndSeatId(request.getShowId(), seatId)
+            ShowSeat showSeat = showSeatRepository.findByShowIdAndSeatId(request.getShowId(), seatId)
                     .orElseThrow(() -> new RuntimeException("Seat not found for this show"));
 
             if (!showSeat.isAvailable()) {
@@ -83,12 +83,11 @@ public class BookingService {
             ticket.setBooking(booking);
             ticket.setSeat(showSeat.getSeat());
             ticket.setIssuedAt(LocalDateTime.now());
+            bookingRepository.saveAndFlush(booking);
 
-            String barcode = barcodeService.generateBarcode(
-                    "BOOKING_" + booking.getId() + "_SEAT_" + seatId
+            byte[] barcodeImage = barcodeService.generateBarcode("BOOKING_" + booking.getId() + "_SEAT_" + seatId
             );
-
-            ticket.setBarcode(barcode);
+            ticket.setBarcode(barcodeImage);
 
             ticketRepository.save(ticket);
             tickets.add(ticket);
@@ -100,8 +99,8 @@ public class BookingService {
         return new BookingResponseDTO(
                 booking.getId(),
                 booking.getStatus(),
-                booking.getTotalAmount(),
-                tickets.get(0).getBarcode()
+                booking.getTotalAmount()
+//                tickets.get(0).getBarcode()
         );
     }
 
@@ -113,16 +112,10 @@ public class BookingService {
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         booking.setStatus("CANCELLED");
-
         List<Ticket> tickets = ticketRepository.findByBookingId(bookingId);
 
         for (Ticket ticket : tickets) {
-
-            ShowSeat showSeat = showSeatRepository
-                    .findByShowIdAndSeatId(
-                            booking.getShow().getId(),
-                            ticket.getSeat().getId()
-                    )
+            ShowSeat showSeat = showSeatRepository.findByShowIdAndSeatId(booking.getShow().getId(), ticket.getSeat().getId())
                     .orElseThrow(() -> new RuntimeException("Show seat not found"));
 
             showSeat.setAvailable(true);
@@ -130,14 +123,27 @@ public class BookingService {
         }
 
         bookingRepository.save(booking);
-
-        String barcode = tickets.isEmpty() ? null : tickets.get(0).getBarcode();
-
         return new BookingResponseDTO(
                 booking.getId(),
                 booking.getStatus(),
+                booking.getTotalAmount()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public ViewBookingResponseDTO viewBooking(Long bookingId) {
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        List<TicketResponseDTO> ticketDTOs = booking.getTickets().stream().map(ticket -> new TicketResponseDTO(ticket.getId(),
+                                Base64.getEncoder().encodeToString(ticket.getBarcode()), ticket.getIssuedAt(), booking.getId(),
+                                ticket.getSeat().getId())).collect(Collectors.toList());
+
+        return new ViewBookingResponseDTO(booking.getId(),
                 booking.getTotalAmount(),
-                barcode
+                booking.getStatus(),
+                ticketDTOs
         );
     }
 }

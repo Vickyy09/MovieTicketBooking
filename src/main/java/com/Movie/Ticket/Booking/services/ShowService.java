@@ -42,7 +42,6 @@ public class ShowService {
         show.setTheatre(theatre);
 
         Show savedShow = showRepository.save(show);
-
         List<Seat> theatreSeats = seatRepository.findByTheatreId(theatre.getId());
 
         for (Seat seat : theatreSeats) {
@@ -52,14 +51,12 @@ public class ShowService {
             showSeat.setAvailable(true);
             showSeatRepository.save(showSeat);
         }
-
         return savedShow;
     }
 
     public List<ShowDTO> getShowsByMovie(Long movieId) {
 
         List<Show> shows = showRepository.findByMovieId(movieId);
-
         return shows.stream().map(show -> {
             ShowDTO dto = new ShowDTO();
             dto.setShowTime(show.getShowTime());

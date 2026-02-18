@@ -4,13 +4,13 @@ public class BookingResponseDTO {
     private Long bookingId;
     private Double totalAmount;
     private String status;
-    private String barcode;
+//    private String barcode;
     public BookingResponseDTO(Long bookingId, String status,
-                              double totalAmount, String barcodeUrl) {
+                              double totalAmount) {
         this.bookingId = bookingId;
         this.status = status;
         this.totalAmount = totalAmount;
-        this.barcode = barcodeUrl;
+//        this.barcode = barcodeUrl;
     }
 
     public Long getBookingId() {
@@ -25,7 +25,7 @@ public class BookingResponseDTO {
         return status;
     }
 
-    public String getBarcode() {
-        return barcode;
-    }
+//    public String getBarcode() {
+//        return barcode;
+//    }
 }
