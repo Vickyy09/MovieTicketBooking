@@ -5,6 +5,9 @@ import com.Movie.Ticket.Booking.dto.ResponseDTO.TicketResponseDTO;
 import com.Movie.Ticket.Booking.dto.ResponseDTO.ViewBookingResponseDTO;
 import com.Movie.Ticket.Booking.dto.requestDTO.BookingRequestDTO;
 import com.Movie.Ticket.Booking.entity.*;
+import com.Movie.Ticket.Booking.exception.BookingConflictException;
+import com.Movie.Ticket.Booking.exception.InvalidBookingException;
+import com.Movie.Ticket.Booking.exception.ResourceNotFoundException;
 import com.Movie.Ticket.Booking.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -44,15 +47,21 @@ public class BookingService {
         List<Long> seatIds = request.getSeatIds();
 
         if (seatIds.size() > 9) {
-            throw new RuntimeException("Maximum 9 seats allowed");
+            throw new InvalidBookingException("Maximum 9 seats allowed");
         }
 
-        User user = userRepository.findById(request.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
+        if (seatIds.stream().distinct().count() != seatIds.size()) {
+            throw new InvalidBookingException("Duplicate seats are not allowed in a booking");
+        }
 
-        Show show = showRepository.findById(request.getShowId()).orElseThrow(() -> new RuntimeException("Show not found"));
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Show show = showRepository.findById(request.getShowId())
+                .orElseThrow(() -> new ResourceNotFoundException("Show not found"));
 
         if (show.getShowTime().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Cannot book seats for past show");
+            throw new InvalidBookingException("Cannot book seats for past show");
         }
 
         Booking booking = new Booking();
@@ -69,11 +78,11 @@ public class BookingService {
         List<Ticket> tickets = new ArrayList<>();
 
         for (Long seatId : seatIds) {
-            ShowSeat showSeat = showSeatRepository.findByShowIdAndSeatId(request.getShowId(), seatId)
-                    .orElseThrow(() -> new RuntimeException("Seat not found for this show"));
+            ShowSeat showSeat = showSeatRepository.findByShowIdAndSeatIdForUpdate(request.getShowId(), seatId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Seat not found for this show"));
 
             if (!showSeat.isAvailable()) {
-                throw new RuntimeException("Seat already booked");
+                throw new BookingConflictException("Seat already booked");
             }
 
             showSeat.setAvailable(false);
@@ -109,14 +118,18 @@ public class BookingService {
     public BookingResponseDTO cancelBooking(Long bookingId) {
 
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if ("CANCELLED".equals(booking.getStatus())) {
+            throw new BookingConflictException("Booking is already cancelled");
+        }
 
         booking.setStatus("CANCELLED");
         List<Ticket> tickets = ticketRepository.findByBookingId(bookingId);
 
         for (Ticket ticket : tickets) {
-            ShowSeat showSeat = showSeatRepository.findByShowIdAndSeatId(booking.getShow().getId(), ticket.getSeat().getId())
-                    .orElseThrow(() -> new RuntimeException("Show seat not found"));
+            ShowSeat showSeat = showSeatRepository.findByShowIdAndSeatIdForUpdate(booking.getShow().getId(), ticket.getSeat().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Show seat not found"));
 
             showSeat.setAvailable(true);
             showSeatRepository.save(showSeat);
@@ -134,7 +147,7 @@ public class BookingService {
     public ViewBookingResponseDTO viewBooking(Long bookingId) {
 
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         List<TicketResponseDTO> ticketDTOs = booking.getTickets().stream().map(ticket -> new TicketResponseDTO(ticket.getId(),
                                 Base64.getEncoder().encodeToString(ticket.getBarcode()), ticket.getIssuedAt(), booking.getId(),

@@ -2,6 +2,7 @@ package com.Movie.Ticket.Booking.services;
 import com.Movie.Ticket.Booking.dto.ResponseDTO.UserResponseDTO;
 import com.Movie.Ticket.Booking.dto.requestDTO.UserRequestDTO;
 import com.Movie.Ticket.Booking.entity.User;
+import com.Movie.Ticket.Booking.exception.ResourceNotFoundException;
 import com.Movie.Ticket.Booking.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,8 +31,7 @@ public class UserService {
     }
 
     public UserResponseDTO getUser(Long id) {
-
-        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return new UserResponseDTO(
                 user.getId(),

@@ -3,6 +3,7 @@ package com.Movie.Ticket.Booking.services;
 import com.Movie.Ticket.Booking.dto.ResponseDTO.MovieResponseDTO;
 import com.Movie.Ticket.Booking.dto.requestDTO.MovieRequestDTO;
 import com.Movie.Ticket.Booking.entity.Movie;
+import com.Movie.Ticket.Booking.exception.ResourceNotFoundException;
 import com.Movie.Ticket.Booking.repository.MovieRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,7 @@ public class MovieService {
 
     public MovieResponseDTO getMovie(Long id) {
 
-        Movie movie = movieRepository.findById(id).orElseThrow(() -> new RuntimeException("Movie not found"));
+        Movie movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
 
         return new MovieResponseDTO(
                 movie.getId(),

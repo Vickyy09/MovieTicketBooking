@@ -2,6 +2,7 @@ package com.Movie.Ticket.Booking.services;
 
 import com.Movie.Ticket.Booking.dto.ShowDTO;
 import com.Movie.Ticket.Booking.entity.*;
+import com.Movie.Ticket.Booking.exception.ResourceNotFoundException;
 import com.Movie.Ticket.Booking.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,12 +29,10 @@ public class ShowService {
 
     public Show createShow(ShowDTO showDTO) {
 
-        Movie movie = movieRepository.findById(showDTO.getMovieId()).orElse(null);
-        Theatre theatre = theatreRepository.findById(showDTO.getTheatreId()).orElse(null);
-
-        if (movie == null || theatre == null) {
-            return null;
-        }
+        Movie movie = movieRepository.findById(showDTO.getMovieId())
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
+        Theatre theatre = theatreRepository.findById(showDTO.getTheatreId())
+                .orElseThrow(() -> new ResourceNotFoundException("Theatre not found"));
 
         Show show = new Show();
         show.setShowTime(showDTO.getShowTime());

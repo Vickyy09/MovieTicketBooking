@@ -3,6 +3,12 @@ package com.Movie.Ticket.Booking.entity;
 import jakarta.persistence.*;
 
 @Entity
+@Table(
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_show_seat",
+                columnNames = {"show_id", "seat_id"}
+        )
+)
 public class ShowSeat {
 
     @Id

@@ -6,6 +6,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 
 @Entity
+@Table(
+        name = "users",
+        uniqueConstraints = @UniqueConstraint(name = "uk_user_email", columnNames = "email")
+)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

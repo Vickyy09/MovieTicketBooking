@@ -5,7 +5,6 @@ import com.Movie.Ticket.Booking.entity.Show;
 import com.Movie.Ticket.Booking.services.ShowService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,21 +17,13 @@ public class ShowController {
     private ShowService showService;
 
     @PostMapping
-    public ResponseEntity<?> createShow(@Valid @RequestBody ShowDTO showDTO) {
-
-        Show savedShow = showService.createShow(showDTO);
-
-        if (savedShow == null) {
-            return ResponseEntity.badRequest().body("Invalid Movie ID or Theatre ID");
-        }
-
-        return ResponseEntity.ok(savedShow);
+    public Show createShow(@Valid @RequestBody ShowDTO showDTO) {
+        return showService.createShow(showDTO);
     }
 
     @GetMapping("/movie/{movieId}")
-    public ResponseEntity<List<ShowDTO>> getShowsByMovie(@PathVariable Long movieId) {
-        List<ShowDTO> shows = showService.getShowsByMovie(movieId);
-        return ResponseEntity.ok(shows);
+    public List<ShowDTO> getShowsByMovie(@PathVariable Long movieId) {
+        return showService.getShowsByMovie(movieId);
     }
 
 }
