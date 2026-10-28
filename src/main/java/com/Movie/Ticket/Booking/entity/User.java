@@ -19,6 +19,30 @@ public class User {
     private String email;
     private String phone;
 
+    @JsonIgnore
+    @Column(length = 100)
+    private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20, columnDefinition = "varchar(20)")
+    private UserRole role = UserRole.USER;
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
+    }
+
     @OneToMany(mappedBy = "user")
     @JsonIgnore
     private List<Booking> bookings;

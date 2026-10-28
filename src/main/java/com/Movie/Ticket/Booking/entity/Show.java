@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "shows")
@@ -14,7 +15,8 @@ public class Show {
     private Long id;
 
     private LocalDateTime showTime;
-    private Double pricePerSeat;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal pricePerSeat;
 
     @ManyToOne
     @JoinColumn(name = "movie_id")
@@ -44,11 +46,11 @@ public class Show {
         this.showTime = showTime;
     }
 
-    public Double getPricePerSeat() {
+    public BigDecimal getPricePerSeat() {
         return pricePerSeat;
     }
 
-    public void setPricePerSeat(Double pricePerSeat) {
+    public void setPricePerSeat(BigDecimal pricePerSeat) {
         this.pricePerSeat = pricePerSeat;
     }
 

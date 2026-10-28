@@ -17,6 +17,7 @@ public class ShowController {
     private ShowService showService;
 
     @PostMapping
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
     public Show createShow(@Valid @RequestBody ShowDTO showDTO) {
         return showService.createShow(showDTO);
     }

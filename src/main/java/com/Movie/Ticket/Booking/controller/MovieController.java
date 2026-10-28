@@ -18,6 +18,7 @@ public class MovieController {
     private MovieService movieService;
 
     @PostMapping
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
     public MovieResponseDTO createMovie(@Valid @RequestBody MovieRequestDTO dto) {
         return movieService.createMovie(dto);
     }

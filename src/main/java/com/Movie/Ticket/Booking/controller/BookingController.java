@@ -15,6 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.transaction.annotation.Transactional;
 
 @Validated
 @RestController
@@ -40,6 +44,7 @@ public class BookingController {
     }
 
     @GetMapping("/shows/{showId}/seats")
+    @Transactional(readOnly = true)
     public List<SeatResponseDTO> getShowSeats(@PathVariable @Positive(message = "Show id must be greater than 0") Long showId) {
         return showSeatRepository.findByShowId(showId)
                 .stream()
@@ -52,19 +57,23 @@ public class BookingController {
     }
 
     @PostMapping
+    @SecurityRequirement(name = "bearerAuth")
     public BookingResponseDTO bookSeats(
-            @Valid @RequestBody BookingRequestDTO request) {
-        return bookingService.bookSeats(request);
+            @Valid @RequestBody BookingRequestDTO request, @AuthenticationPrincipal Jwt principal) {
+        return bookingService.bookSeats(request, Long.valueOf(principal.getSubject()));
     }
 
     @GetMapping("/{id}")
-    public ViewBookingResponseDTO getBooking(@PathVariable Long id) {
-        return bookingService.viewBooking(id);
+    @SecurityRequirement(name = "bearerAuth")
+    public ViewBookingResponseDTO getBooking(@PathVariable @Positive Long id, @AuthenticationPrincipal Jwt principal) {
+        return bookingService.viewBooking(id, Long.valueOf(principal.getSubject()));
     }
 
 
     @DeleteMapping("/{id}")
-    public BookingResponseDTO cancelBooking(@PathVariable @Positive(message = "Booking id must be greater than 0") Long id) {
-        return bookingService.cancelBooking(id);
+    @SecurityRequirement(name = "bearerAuth")
+    public BookingResponseDTO cancelBooking(@PathVariable @Positive(message = "Booking id must be greater than 0") Long id,
+                                            @AuthenticationPrincipal Jwt principal) {
+        return bookingService.cancelBooking(id, Long.valueOf(principal.getSubject()));
     }
 }

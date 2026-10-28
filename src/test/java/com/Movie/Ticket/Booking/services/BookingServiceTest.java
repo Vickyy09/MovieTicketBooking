@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,7 +61,7 @@ class BookingServiceTest {
     void bookSeatsRejectsDuplicateSeatIds() {
         BookingRequestDTO request = bookingRequest(List.of(10L, 10L));
 
-        assertThrows(InvalidBookingException.class, () -> bookingService.bookSeats(request));
+        assertThrows(InvalidBookingException.class, () -> bookingService.bookSeats(request, 1L));
 
         verify(userRepository, never()).findById(any());
     }
@@ -75,7 +76,7 @@ class BookingServiceTest {
         when(showRepository.findById(2L)).thenReturn(Optional.of(show));
         when(showSeatRepository.findByShowIdAndSeatIdForUpdate(2L, 10L)).thenReturn(Optional.of(showSeat));
 
-        assertThrows(BookingConflictException.class, () -> bookingService.bookSeats(request));
+        assertThrows(BookingConflictException.class, () -> bookingService.bookSeats(request, 1L));
     }
 
     @Test
@@ -88,17 +89,16 @@ class BookingServiceTest {
         when(showSeatRepository.findByShowIdAndSeatIdForUpdate(2L, 10L)).thenReturn(Optional.of(showSeat));
         when(barcodeService.generateBarcode(any())).thenReturn(new byte[]{1, 2, 3});
 
-        BookingResponseDTO response = bookingService.bookSeats(request);
+        BookingResponseDTO response = bookingService.bookSeats(request, 1L);
 
         assertEquals("CONFIRMED", response.getStatus());
-        assertEquals(150.0, response.getTotalAmount());
+        assertEquals(new BigDecimal("150.00"), response.getTotalAmount());
         assertFalse(showSeat.isAvailable());
         verify(ticketRepository).save(any());
     }
 
     private BookingRequestDTO bookingRequest(List<Long> seatIds) {
         BookingRequestDTO request = new BookingRequestDTO();
-        request.setUserId(1L);
         request.setShowId(2L);
         request.setSeatIds(seatIds);
         return request;
@@ -108,7 +108,7 @@ class BookingServiceTest {
         Show show = new Show();
         show.setId(2L);
         show.setShowTime(LocalDateTime.now().plusDays(1));
-        show.setPricePerSeat(150.0);
+        show.setPricePerSeat(new BigDecimal("150.00"));
         return show;
     }
 

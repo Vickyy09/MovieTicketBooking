@@ -6,6 +6,7 @@ import com.Movie.Ticket.Booking.exception.ResourceNotFoundException;
 import com.Movie.Ticket.Booking.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 
@@ -27,6 +28,7 @@ public class ShowService {
     @Autowired
     private ShowSeatRepository showSeatRepository;
 
+    @Transactional
     public Show createShow(ShowDTO showDTO) {
 
         Movie movie = movieRepository.findById(showDTO.getMovieId())

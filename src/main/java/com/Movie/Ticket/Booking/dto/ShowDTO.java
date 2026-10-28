@@ -1,6 +1,8 @@
 package com.Movie.Ticket.Booking.dto;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -13,7 +15,8 @@ public class ShowDTO {
 
     @NotNull(message = "Price is required")
     @Positive(message = "Price must be greater than 0")
-    private Double price;
+    @Digits(integer = 10, fraction = 2)
+    private BigDecimal price;
 
     @NotNull(message = "Movie id is required")
     private Long movieId;
@@ -32,11 +35,11 @@ public class ShowDTO {
         this.showTime = showTime;
     }
 
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(Double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 

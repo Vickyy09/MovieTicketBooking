@@ -3,6 +3,7 @@ package com.Movie.Ticket.Booking.entity;
 import jakarta.persistence.*;
 import java.util.List;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
 public class Booking {
@@ -11,8 +12,12 @@ public class Booking {
     private Long id;
 
     private LocalDateTime bookingTime;
-    private Double totalAmount;
-    private String status;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20, columnDefinition = "varchar(20)")
+    private BookingStatus status;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -41,19 +46,19 @@ public class Booking {
         this.bookingTime = bookingTime;
     }
 
-    public Double getTotalAmount() {
+    public BigDecimal getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(Double totalAmount) {
+    public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
     }
 
-    public String getStatus() {
+    public BookingStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(BookingStatus status) {
         this.status = status;
     }
 

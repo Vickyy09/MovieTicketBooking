@@ -1,16 +1,17 @@
 package com.Movie.Ticket.Booking.dto.ResponseDTO;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 public class ViewBookingResponseDTO {
 
     private Long bookingId;
-    private Double totalAmount;
+    private BigDecimal totalAmount;
     private String status;
     private List<TicketResponseDTO> tickets;
 
     public ViewBookingResponseDTO(Long bookingId,
-                                  Double totalAmount,
+                                  BigDecimal totalAmount,
                                   String status,
                                   List<TicketResponseDTO> tickets) {
         this.bookingId = bookingId;
@@ -23,7 +24,7 @@ public class ViewBookingResponseDTO {
         return bookingId;
     }
 
-    public Double getTotalAmount() {
+    public BigDecimal getTotalAmount() {
         return totalAmount;
     }
 

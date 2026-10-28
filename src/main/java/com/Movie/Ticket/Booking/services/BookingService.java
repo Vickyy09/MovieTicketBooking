@@ -6,11 +6,16 @@ import com.Movie.Ticket.Booking.dto.ResponseDTO.ViewBookingResponseDTO;
 import com.Movie.Ticket.Booking.dto.requestDTO.BookingRequestDTO;
 import com.Movie.Ticket.Booking.entity.*;
 import com.Movie.Ticket.Booking.exception.BookingConflictException;
+import com.Movie.Ticket.Booking.exception.BarcodeGenerationException;
 import com.Movie.Ticket.Booking.exception.InvalidBookingException;
 import com.Movie.Ticket.Booking.exception.ResourceNotFoundException;
 import com.Movie.Ticket.Booking.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
+import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.Objects;
 import java.util.Base64;
 import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,9 +47,14 @@ public class BookingService {
 
 
     @Transactional
-    public BookingResponseDTO bookSeats(BookingRequestDTO request) {
+    public BookingResponseDTO bookSeats(BookingRequestDTO request, Long authenticatedUserId) {
 
         List<Long> seatIds = request.getSeatIds();
+
+        if (seatIds == null || seatIds.isEmpty() || seatIds.stream().anyMatch(
+                seatId -> seatId == null || seatId <= 0)) {
+            throw new InvalidBookingException("Select valid seats");
+        }
 
         if (seatIds.size() > 9) {
             throw new InvalidBookingException("Maximum 9 seats allowed");
@@ -54,7 +64,9 @@ public class BookingService {
             throw new InvalidBookingException("Duplicate seats are not allowed in a booking");
         }
 
-        User user = userRepository.findById(request.getUserId())
+        seatIds = seatIds.stream().sorted().toList();
+
+        User user = userRepository.findById(authenticatedUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Show show = showRepository.findById(request.getShowId())
@@ -68,9 +80,9 @@ public class BookingService {
         booking.setUser(user);
         booking.setShow(show);
         booking.setBookingTime(LocalDateTime.now());
-        booking.setStatus("CONFIRMED");
+        booking.setStatus(BookingStatus.CONFIRMED);
 
-        double totalAmount = seatIds.size() * show.getPricePerSeat();
+        BigDecimal totalAmount = show.getPricePerSeat().multiply(BigDecimal.valueOf(seatIds.size()));
         booking.setTotalAmount(totalAmount);
 
         bookingRepository.save(booking);
@@ -96,6 +108,9 @@ public class BookingService {
 
             byte[] barcodeImage = barcodeService.generateBarcode("BOOKING_" + booking.getId() + "_SEAT_" + seatId
             );
+            if (barcodeImage == null || barcodeImage.length == 0) {
+                throw new BarcodeGenerationException("Barcode provider returned an empty image");
+            }
             ticket.setBarcode(barcodeImage);
 
             ticketRepository.save(ticket);
@@ -107,7 +122,7 @@ public class BookingService {
 
         return new BookingResponseDTO(
                 booking.getId(),
-                booking.getStatus(),
+                booking.getStatus().name(),
                 booking.getTotalAmount()
 //                tickets.get(0).getBarcode()
         );
@@ -115,17 +130,23 @@ public class BookingService {
 
 
     @Transactional
-    public BookingResponseDTO cancelBooking(Long bookingId) {
+    public BookingResponseDTO cancelBooking(Long bookingId, Long authenticatedUserId) {
 
-        Booking booking = bookingRepository.findById(bookingId)
+        Booking booking = bookingRepository.findByIdForUpdate(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
-        if ("CANCELLED".equals(booking.getStatus())) {
-            throw new BookingConflictException("Booking is already cancelled");
+        requireOwner(booking, authenticatedUserId);
+        if (BookingStatus.CANCELLED == booking.getStatus()) {
+            return new BookingResponseDTO(booking.getId(), booking.getStatus().name(), booking.getTotalAmount());
         }
 
-        booking.setStatus("CANCELLED");
-        List<Ticket> tickets = ticketRepository.findByBookingId(bookingId);
+        if (!booking.getShow().getShowTime().isAfter(LocalDateTime.now())) {
+            throw new InvalidBookingException("Cannot cancel a booking after the show starts");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        List<Ticket> tickets = ticketRepository.findByBookingId(bookingId).stream()
+                .sorted(Comparator.comparing(ticket -> ticket.getSeat().getId())).toList();
 
         for (Ticket ticket : tickets) {
             ShowSeat showSeat = showSeatRepository.findByShowIdAndSeatIdForUpdate(booking.getShow().getId(), ticket.getSeat().getId())
@@ -138,25 +159,35 @@ public class BookingService {
         bookingRepository.save(booking);
         return new BookingResponseDTO(
                 booking.getId(),
-                booking.getStatus(),
+                booking.getStatus().name(),
                 booking.getTotalAmount()
         );
     }
 
     @Transactional(readOnly = true)
-    public ViewBookingResponseDTO viewBooking(Long bookingId) {
+    public ViewBookingResponseDTO viewBooking(Long bookingId, Long authenticatedUserId) {
 
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
+        requireOwner(booking, authenticatedUserId);
+
         List<TicketResponseDTO> ticketDTOs = booking.getTickets().stream().map(ticket -> new TicketResponseDTO(ticket.getId(),
-                                Base64.getEncoder().encodeToString(ticket.getBarcode()), ticket.getIssuedAt(), booking.getId(),
+                                booking.getStatus() == BookingStatus.CONFIRMED
+                                        ? Base64.getEncoder().encodeToString(ticket.getBarcode()) : null,
+                                ticket.getIssuedAt(), booking.getId(),
                                 ticket.getSeat().getId())).collect(Collectors.toList());
 
         return new ViewBookingResponseDTO(booking.getId(),
                 booking.getTotalAmount(),
-                booking.getStatus(),
+                booking.getStatus().name(),
                 ticketDTOs
         );
+    }
+
+    private void requireOwner(Booking booking, Long authenticatedUserId) {
+        if (!Objects.equals(booking.getUser().getId(), authenticatedUserId)) {
+            throw new AccessDeniedException("You can only access your own bookings");
+        }
     }
 }

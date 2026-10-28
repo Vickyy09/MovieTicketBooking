@@ -6,6 +6,12 @@ import com.Movie.Ticket.Booking.exception.ResourceNotFoundException;
 import com.Movie.Ticket.Booking.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
+import com.Movie.Ticket.Booking.exception.BookingConflictException;
+import com.Movie.Ticket.Booking.exception.InvalidBookingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 
 @Service
@@ -14,11 +20,23 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Transactional
     public UserResponseDTO registerUser(UserRequestDTO dto) {
 
+        String email = dto.getEmail().trim().toLowerCase(Locale.ROOT);
+        if (userRepository.findByEmailIgnoreCase(email).isPresent()) {
+            throw new BookingConflictException("Email is already registered");
+        }
+        if (dto.getPassword().getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new InvalidBookingException("Password must not exceed 72 UTF-8 bytes");
+        }
         User user = new User();
         user.setName(dto.getName());
-        user.setEmail(dto.getEmail());
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
         user.setPhone(dto.getPhone());
         User savedUser = userRepository.save(user);
 

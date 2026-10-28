@@ -17,6 +17,7 @@ public class TheatreController {
     private TheatreService theatreService;
 
     @PostMapping
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
     public TheatreResponseDTO createTheatre(@Valid @RequestBody TheatreRequestDTO dto) {
         return theatreService.createTheatre(dto);
     }

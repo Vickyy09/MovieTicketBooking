@@ -8,6 +8,7 @@ import com.Movie.Ticket.Booking.repository.SeatRepository;
 import com.Movie.Ticket.Booking.repository.TheatreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -19,6 +20,7 @@ public class TheatreService {
     @Autowired
     private SeatRepository seatRepository;
 
+    @Transactional
     public TheatreResponseDTO createTheatre(TheatreRequestDTO dto) {
 
         Theatre theatre = new Theatre();

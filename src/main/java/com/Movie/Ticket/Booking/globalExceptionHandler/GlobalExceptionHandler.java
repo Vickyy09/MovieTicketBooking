@@ -1,6 +1,13 @@
 package com.Movie.Ticket.Booking.globalExceptionHandler;
 
 import com.Movie.Ticket.Booking.exception.BookingConflictException;
+import com.Movie.Ticket.Booking.exception.BarcodeGenerationException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import com.Movie.Ticket.Booking.exception.InvalidBookingException;
 import com.Movie.Ticket.Booking.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -16,6 +23,36 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Object> handleAuthentication(AuthenticationException exception) {
+        return error(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Object> handleAccessDenied(AccessDeniedException exception) {
+        return error(HttpStatus.FORBIDDEN, "You can only access resources you are authorized to use");
+    }
+
+    @ExceptionHandler(BarcodeGenerationException.class)
+    public ResponseEntity<Object> handleBarcodeFailure(BarcodeGenerationException exception) {
+        return error(HttpStatus.BAD_GATEWAY, "Barcode generation failed; booking was not completed");
+    }
+
+    @ExceptionHandler({DataIntegrityViolationException.class, PessimisticLockingFailureException.class})
+    public ResponseEntity<Object> handleDatabaseConflict(Exception exception) {
+        return error(HttpStatus.CONFLICT, "The request conflicts with existing data; refresh and retry");
+    }
+
+    @ExceptionHandler({HttpMessageNotReadableException.class, HandlerMethodValidationException.class})
+    public ResponseEntity<Object> handleInvalidRequest(Exception exception) {
+        return error(HttpStatus.BAD_REQUEST, "Invalid request");
+    }
+
+    private ResponseEntity<Object> error(HttpStatus status, String message) {
+        return new ResponseEntity<>(Map.of("timestamp", LocalDateTime.now(), "status", status.value(),
+                "error", message), status);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Object> handleValidationExceptions(
